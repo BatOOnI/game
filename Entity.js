@@ -63,15 +63,19 @@ Player = function(param){
 	var self = Entity(param);
 	self.number = "" + Math.floor(10 * Math.random());
 	self.username = param.username;
+	self.pressingShift = false;
 	self.pressingRight = false;
 	self.pressingLeft = false;
 	self.pressingUp = false;
 	self.pressingDown = false;
 	self.pressingAttack = false;
 	self.mouseAngle = 0;
-	self.maxSpd = 10;
-	self.hp = 10;
-	self.hpMax = 10;
+	self.maxSpd = 6;
+	self.maxRun = 3;
+	self.hp = 100;
+	self.hpMax = 100;
+	self.stamina = 100;
+	self.maxStamina = 100;
 	self.score = 0;
 	self.inventory = new Inventory(param.socket,true);
 	
@@ -96,21 +100,41 @@ Player = function(param){
 			map:self.map,
 		});
 	}
-	
+///////////////////////////////////////////////////////
+///////////				Movement			///////////
+///////////////////////////////////////////////////////
 	self.updateSpd = function(){
-		if(self.pressingRight)
+		if(self.pressingRight){
 			self.spdX = self.maxSpd;
-		else if(self.pressingLeft)
+			if(self.pressingShift){
+				self.spdX += self.maxRun;
+			}
+		}
+		else if(self.pressingLeft){
 			self.spdX = -self.maxSpd;
-		else
+			if(self.pressingShift){
+				self.spdX -= self.maxRun;
+			}
+		}
+		else{
 			self.spdX = 0;
-		
-		if(self.pressingUp)
+		}
+
+		if(self.pressingUp){
 			self.spdY = -self.maxSpd;
-		else if(self.pressingDown)
+			if(self.pressingShift){
+				self.spdY -= self.maxRun;
+			}
+		}
+		else if(self.pressingDown){
 			self.spdY = self.maxSpd;
-		else
-			self.spdY = 0;		
+			if(self.pressingShift){
+				self.spdY += self.maxRun;
+			}
+		}
+		else{
+			self.spdY = 0;
+		}
 	}
 	
 	self.getInitPack = function(){
@@ -121,6 +145,8 @@ Player = function(param){
 			number:self.number,	
 			hp:self.hp,
 			hpMax:self.hpMax,
+			stamina:self.stamina,
+			maxStamina:self.maxStamina,
 			score:self.score,
 			map:self.map,
 		};		
@@ -131,6 +157,7 @@ Player = function(param){
 			x:self.x,
 			y:self.y,
 			hp:self.hp,
+			stamina:self.stamina,
 			score:self.score,
 			map:self.map,
 		}	
@@ -161,6 +188,8 @@ Player.onConnect = function(socket,username){
 			player.pressingUp = data.state;
 		else if(data.inputId === 'down')
 			player.pressingDown = data.state;
+		else if(data.inputId === 'shift')
+			player.pressingShift = data.state;
 		else if(data.inputId === 'attack')
 			player.pressingAttack = data.state;
 		else if(data.inputId === 'mouseAngle')

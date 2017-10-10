@@ -98,7 +98,7 @@
         socket.emit('changeMap');
     }
 
-    var inventory - new Inventory(null);
+    var inventory = new Inventory(null);
     socket.on('updateInventory',function(items){
         inventory.items = items;
         inventory.refreshRender();
@@ -129,6 +129,8 @@
         self.y = initPack.y;
         self.hp = initPack.hp;
         self.hpMax = initPack.hpMax;
+        self.stamina = initPack.stamina;
+        self.maxStamina = initPack.maxStamina;
         self.score = initPack.score;
         self.map = initPack.map;
 
@@ -141,6 +143,10 @@
             var hpWidth = 30 * self.hp / self.hpMax;
             ctx.fillStyle = 'red';
             ctx.fillRect(x - hpWidth/2,y - 40,hpWidth,4);
+
+            var staminaWidth = 30 * self.stamina / self.maxStamina;
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(x - staminaWidth/2,y - 35,staminaWidth,4);
 
             var width = Img.player.width*2;
             var height = Img.player.height*2;
@@ -210,6 +216,8 @@
                     p.y = pack.y;
                 if(pack.hp !== undefined)
                     p.hp = pack.hp;
+                if(pack.stamina !== undefined)
+                    p.stamina = pack.stamina;
                 if(pack.score !== undefined)
                     p.score = pack.score;
                 if(pack.map !== undefined)
@@ -276,6 +284,8 @@
             socket.emit('keyPress',{inputId:'left',state:true});
         else if(event.keyCode === 87) // w
             socket.emit('keyPress',{inputId:'up',state:true});
+        else if(event.shiftKey === true) // shift
+            socket.emit('keyPress',{inputId:'shift',state:true});
 
     }
     document.onkeyup = function(event){
@@ -287,6 +297,8 @@
             socket.emit('keyPress',{inputId:'left',state:false});
         else if(event.keyCode === 87) // w
             socket.emit('keyPress',{inputId:'up',state:false});
+        else if(event.shiftKey === false) // shift
+            socket.emit('keyPress',{inputId:'shift',state:false});
     }
 
     document.onmousedown = function(event){

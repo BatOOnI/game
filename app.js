@@ -1,7 +1,7 @@
-var mongojs = require("mongojs");
-var db = mongojs('localhost:27017/myGame',['acocunt','progress']);
+//var mongojs = require("mongojs");
+var db = null;//mongojs('localhost:27017/myGame', ['account','progress']);
 
-require('./entity');
+require('./Entity');
 require('./client/Inventory');
 
 var express = require('express');
@@ -90,19 +90,16 @@ io.sockets.on('connection', function(socket){
 	
 });
 
-var initPack = {player:[],bullet:[]};
-var removePack = {player:[],bullet:[]};
-
 
 setInterval(function(){
 	var packs = Entity.getFrameUpdateData();
 	for(var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
-		socket.emit('init'packs.initPack);
+		socket.emit('init',packs.initPack);
 		socket.emit('update',packs.updatePack);
-		socket.emit('remove'packs.removePack);
+		socket.emit('remove',packs.removePack);
 	}
-
+	
 },1000/25);
 
 /*
@@ -122,3 +119,10 @@ var startProfiling = function(duration){
 }
 startProfiling(10000);
 */
+
+
+
+
+
+
+
