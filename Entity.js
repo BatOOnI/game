@@ -21,9 +21,9 @@ Entity = function(param){
 		if(param.map)
 			self.map = param.map;
 		if(param.id)
-			self.id = param.id;		
+			self.id = param.id;
 	}
-	
+
 	self.update = function(){
 		self.updatePosition();
 	}
@@ -58,7 +58,6 @@ Entity.getFrameUpdateData = function(){
 	return pack;
 }
 
-
 Player = function(param){
 	var self = Entity(param);
 	self.number = "" + Math.floor(10 * Math.random());
@@ -78,13 +77,13 @@ Player = function(param){
 	self.maxStamina = 100;
 	self.score = 0;
 	self.inventory = new Inventory(param.socket,true);
-	
+
 	var super_update = self.update;
 	self.update = function(){
 		self.updateSpd();
-		
+
 		super_update();
-		
+
 		if(self.pressingAttack){
 			self.shootBullet(self.mouseAngle);
 		}
@@ -103,53 +102,38 @@ Player = function(param){
 ///////////////////////////////////////////////////////
 ///////////				Movement			///////////
 ///////////////////////////////////////////////////////
-	self.updateSpd = function(){
-		if(self.pressingRight){
-			self.spdX = self.maxSpd;
-			if(self.pressingShift){
-				self.spdX += self.maxRun;
-			}
-		}
-		else if(self.pressingLeft){
-			self.spdX = -self.maxSpd;
-			if(self.pressingShift){
-				self.spdX -= self.maxRun;
-			}
-		}
-		else{
-			self.spdX = 0;
-		}
+	self.updateSpd = function () {
+	    var dirX = -self.pressingLeft + self.pressingRight;
+	    var dirY = -self.pressingUp + self.pressingDown;
 
-		if(self.pressingUp){
-			self.spdY = -self.maxSpd;
-			if(self.pressingShift){
-				self.spdY -= self.maxRun;
-			}
-		}
-		else if(self.pressingDown){
-			self.spdY = self.maxSpd;
-			if(self.pressingShift){
-				self.spdY += self.maxRun;
-			}
-		}
-		else{
-			self.spdY = 0;
-		}
-	}
-	
+	    var speed = self.maxSpd;
+
+	    if (self.pressingShift && self.stamina > 0 && (dirX !== 0 || dirY !== 0)) {
+	        speed += self.maxRun;
+	        self.stamina--;
+	    }
+
+	    if (dirX !== 0 && dirY !== 0) {
+	        speed *= Math.SQRT1_2;
+	    }
+
+	    self.spdX = speed * dirX;
+	    self.spdY = speed * dirY;
+	};
+
 	self.getInitPack = function(){
 		return {
 			id:self.id,
 			x:self.x,
-			y:self.y,	
-			number:self.number,	
+			y:self.y,
+			number:self.number,
 			hp:self.hp,
 			hpMax:self.hpMax,
 			stamina:self.stamina,
 			maxStamina:self.maxStamina,
 			score:self.score,
 			map:self.map,
-		};		
+		};
 	}
 	self.getUpdatePack = function(){
 		return {
@@ -160,14 +144,17 @@ Player = function(param){
 			stamina:self.stamina,
 			score:self.score,
 			map:self.map,
-		}	
+		}
 	}
-	
+
 	Player.list[self.id] = self;
-	
+
 	initPack.player.push(self.getInitPack());
 	return self;
 }
+///////////////////////////////////////////////////////
+////////////	Inicjalizacja playera	///////////////
+///////////////////////////////////////////////////////
 Player.list = {};
 Player.onConnect = function(socket,username){
 	var map = 'forest';
@@ -195,14 +182,14 @@ Player.onConnect = function(socket,username){
 		else if(data.inputId === 'mouseAngle')
 			player.mouseAngle = data.state;
 	});
-	
+
 	socket.on('changeMap',function(data){
 		if(player.map === 'field')
 			player.map = 'forest';
 		else
 			player.map = 'field';
 	});
-	
+
 	socket.on('sendMsgToServer',function(data){
 		for(var i in SOCKET_LIST){
 			SOCKET_LIST[i].emit('addToChat',player.username + ': ' + data);
@@ -220,7 +207,7 @@ Player.onConnect = function(socket,username){
 			socket.emit('addToChat','To ' + data.username + ':' + data.message);
 		}
 	});
-	
+
 	socket.emit('init',{
 		selfId:socket.id,
 		player:Player.getAllInitPack(),
@@ -243,7 +230,7 @@ Player.update = function(){
 	for(var i in Player.list){
 		var player = Player.list[i];
 		player.update();
-		pack.push(player.getUpdatePack());		
+		pack.push(player.getUpdatePack());
 	}
 	return pack;
 }
@@ -253,30 +240,30 @@ Bullet = function(param){
 	var self = Entity(param);
 	self.id = Math.random();
 	self.angle = param.angle;
-	self.spdX = Math.cos(param.angle/180*Math.PI) * 10;
-	self.spdY = Math.sin(param.angle/180*Math.PI) * 10;
+	self.spdX = Math.cos(param.angle/180*Math.PI) * 40;
+	self.spdY = Math.sin(param.angle/180*Math.PI) * 40;
 	self.parent = param.parent;
-	
+
 	self.timer = 0;
 	self.toRemove = false;
 	var super_update = self.update;
 	self.update = function(){
-		if(self.timer++ > 100)
+		if(self.timer++ > 10)
 			self.toRemove = true;
 		super_update();
-		
+
 		for(var i in Player.list){
 			var p = Player.list[i];
 			if(self.map === p.map && self.getDistance(p) < 32 && self.parent !== p.id){
-				p.hp -= 1;
-								
+				p.hp -= 10;
+
 				if(p.hp <= 0){
 					var shooter = Player.list[self.parent];
 					if(shooter)
 						shooter.score += 1;
 					p.hp = p.hpMax;
 					p.x = Math.random() * 500;
-					p.y = Math.random() * 500;					
+					p.y = Math.random() * 500;
 				}
 				self.toRemove = true;
 			}
@@ -294,10 +281,10 @@ Bullet = function(param){
 		return {
 			id:self.id,
 			x:self.x,
-			y:self.y,		
+			y:self.y,
 		};
 	}
-	
+
 	Bullet.list[self.id] = self;
 	initPack.bullet.push(self.getInitPack());
 	return self;
@@ -313,7 +300,7 @@ Bullet.update = function(){
 			delete Bullet.list[i];
 			removePack.bullet.push(bullet.id);
 		} else
-			pack.push(bullet.getUpdatePack());		
+			pack.push(bullet.getUpdatePack());
 	}
 	return pack;
 }
